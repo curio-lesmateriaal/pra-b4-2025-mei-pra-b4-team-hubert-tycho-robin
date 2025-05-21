@@ -53,8 +53,47 @@ namespace PRA_B4_FOTOKIOSK
 
         private void btnShopAdd_Click(object sender, RoutedEventArgs e)
         {
-            ShopController.AddButtonClick();
+            bool invoerCorrect = true;
+
+            // Valideer aantal
+            if (!double.TryParse(tbAmount.Text, out double amount) || amount <= 0)
+            {
+                
+                return;
+            }
+
+            // Haal geselecteerd product op
+            string geselecteerdProduct = cbProducts.SelectedItem as string;
+            if (string.IsNullOrEmpty(geselecteerdProduct))
+            {
+                
+                return;
+            }
+
+            // Bepaal de prijs op basis van geselecteerd product
+            double prijsPerStuk;
+            switch (geselecteerdProduct)
+            {
+                case "Foto 10x15":
+                    prijsPerStuk = 2.55;
+                    break;
+                case "Foto 15x20":
+                    prijsPerStuk = 4.00;
+                    break;
+                default:
+                    
+                    return;
+            }
+
+            // Bereken eindbedrag
+            double eindbedrag = amount * prijsPerStuk;
+
+            // Toon eindbedrag in Label en TextBox
+            lbReceipt.Content = $"Eindbedrag: {eindbedrag:C}";
+            
         }
+
+
 
         private void btnShopReset_Click(object sender, RoutedEventArgs e)
         {
