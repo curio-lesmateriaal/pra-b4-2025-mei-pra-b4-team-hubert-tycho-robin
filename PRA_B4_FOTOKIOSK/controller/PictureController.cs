@@ -1,4 +1,4 @@
-﻿using PRA_B4_FOTOKIOSK.magie;
+using PRA_B4_FOTOKIOSK.magie;
 using PRA_B4_FOTOKIOSK.models;
 using System;
 using System.Collections.Generic;
@@ -14,43 +14,48 @@ namespace PRA_B4_FOTOKIOSK.controller
         // De window die we laten zien op het scherm
         public static Home Window { get; set; }
 
-
         // De lijst met fotos die we laten zien
         public List<KioskPhoto> PicturesToDisplay = new List<KioskPhoto>();
-        
-        
-        // Start methode die wordt aangeroepen wanneer de foto pagina opent.
+
+        // Start methode die wordt aangeroepen wanneer de foto pagina opent
         public void Start()
         {
+            // Bepaal het dagnummer van vandaag (0 = Zondag, 1 = Maandag, ..., 6 = Zaterdag)
+            int today = (int)DateTime.Now.DayOfWeek;
 
-            // Initializeer de lijst met fotos
-            // WAARSCHUWING. ZONDER FILTER LAADT DIT ALLES!
-            // foreach is een for-loop die door een array loopt
+            // Leeg eerst de lijst, voor het geval deze opnieuw gevuld wordt
+            PicturesToDisplay.Clear();
+
+            // Loop door alle submappen in de fotos map
             foreach (string dir in Directory.GetDirectories(@"../../../fotos"))
             {
-                /**
-                 * dir string is de map waar de fotos in staan. Bijvoorbeeld:
-                 * \fotos\0_Zondag
-                 */
-                foreach (string file in Directory.GetFiles(dir))
+                // Haal alleen de mapnaam op, bijvoorbeeld "2_Dinsdag"
+                string folderName = new DirectoryInfo(dir).Name;
+
+                // Split de naam op "_" en probeer het eerste deel om te zetten naar een int
+                string[] parts = folderName.Split('_');
+                if (parts.Length > 0 && int.TryParse(parts[0], out int folderDay))
                 {
-                    /**
-                     * file string is de file van de foto. Bijvoorbeeld:
-                     * \fotos\0_Zondag\10_05_30_id8824.jpg
-                     */
-                    PicturesToDisplay.Add(new KioskPhoto() { Id = 0, Source = file });
+                    // Als de dag overeenkomt met vandaag, laad dan de foto's
+                    if (folderDay == today)
+                    {
+                        foreach (string file in Directory.GetFiles(dir))
+                        {
+                            PicturesToDisplay.Add(new KioskPhoto() { Id = 0, Source = file });
+                        }
+                    }
                 }
             }
 
-            // Update de fotos
+            // Update de fotos in de UI
             PictureManager.UpdatePictures(PicturesToDisplay);
         }
 
         // Wordt uitgevoerd wanneer er op de Refresh knop is geklikt
         public void RefreshButtonClick()
         {
-
+            // Herlaad de foto's van vandaag
+            Start();
         }
-
     }
 }
