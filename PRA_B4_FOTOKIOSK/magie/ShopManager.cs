@@ -32,15 +32,16 @@ namespace PRA_B4_FOTOKIOSK.magie
             Instance.lbReceipt.Content = text;
         }
 
+        public static void AddShopReceipt(string text)
+        {
+            SetShopReceipt(GetShopReceipt() + text);
+        }
         public static string GetShopReceipt()
         {
             return (string)Instance.lbReceipt.Content;
         }
 
-        public static void AddShopReceipt(string text)
-        {
-            SetShopReceipt(GetShopReceipt() + text);
-        }
+        
 
         public static void UpdateDropDownProducts()
         {
