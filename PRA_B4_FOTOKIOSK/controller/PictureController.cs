@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PRA_B4_FOTOKIOSK.controller
 {
@@ -14,44 +12,82 @@ namespace PRA_B4_FOTOKIOSK.controller
         // De window die we laten zien op het scherm
         public static Home Window { get; set; }
 
-        // De lijst met fotos die we laten zien
+        // De lijst met foto's die we op het scherm willen tonen
         public List<KioskPhoto> PicturesToDisplay = new List<KioskPhoto>();
 
-        // Start methode die wordt aangeroepen wanneer de foto pagina opent
+        // Deze methode wordt uitgevoerd wanneer de foto-pagina opent
         public void Start()
         {
-            // Bepaal het dagnummer van vandaag (0 = Zondag, 1 = Maandag, ..., 6 = Zaterdag)
+            // Bepaal welk dagnummer het vandaag is (0 = Zondag, 1 = Maandag, ..., 6 = Zaterdag)
             int today = (int)DateTime.Now.DayOfWeek;
 
-            // Leeg eerst de lijst, voor het geval deze opnieuw gevuld wordt
+            // Maak de lijst leeg zodat we opnieuw kunnen vullen
             PicturesToDisplay.Clear();
 
-            // Loop door alle submappen in de fotos map
+            // Haal het huidige tijdstip op
+            DateTime now = DateTime.Now;
+
+            // Bereken de onder- en bovengrens voor geldige foto's
+            // Alleen foto's tussen 2 en 30 minuten geleden mogen worden getoond
+            DateTime lowerBound = now.AddMinutes(-30); // 30 minuten geleden
+            DateTime upperBound = now.AddMinutes(-2);  // 2 minuten geleden
+
+            // Loop door alle dagmappen in de fotos-map
             foreach (string dir in Directory.GetDirectories(@"../../../fotos"))
             {
-                // Haal alleen de mapnaam op, bijvoorbeeld "2_Dinsdag"
+                // Bijvoorbeeld: mapnaam "0_Zondag"
                 string folderName = new DirectoryInfo(dir).Name;
 
-                // Split de naam op "_" en probeer het eerste deel om te zetten naar een int
+                // Splits de mapnaam op "_" om het dagnummer eruit te halen
                 string[] parts = folderName.Split('_');
+
+                // Controleer of het eerste deel van de mapnaam een geldig getal is
                 if (parts.Length > 0 && int.TryParse(parts[0], out int folderDay))
                 {
-                    // Als de dag overeenkomt met vandaag, laad dan de foto's
+                    // Alleen doorgaan als het dagnummer van de map overeenkomt met vandaag
                     if (folderDay == today)
                     {
+                        // Loop door alle bestanden in deze dagmap
                         foreach (string file in Directory.GetFiles(dir))
                         {
-                            PicturesToDisplay.Add(new KioskPhoto() { Id = 0, Source = file });
+                            // Haal de bestandsnaam zonder extensie op
+                            // Bijvoorbeeld: "10_06_32_id2125"
+                            string filename = Path.GetFileNameWithoutExtension(file);
+                            string[] fileParts = filename.Split('_');
+
+                            // Verwacht dat de bestandsnaam begint met uur_minuut_seconde_...
+                            if (fileParts.Length >= 3 &&
+                                int.TryParse(fileParts[0], out int hour) &&
+                                int.TryParse(fileParts[1], out int minute) &&
+                                int.TryParse(fileParts[2], out int second))
+                            {
+                                try
+                                {
+                                    // Maak een DateTime object van de tijd in de bestandsnaam
+                                    DateTime photoTime = new DateTime(now.Year, now.Month, now.Day, hour, minute, second);
+
+                                    // Controleer of de foto binnen het tijdsvenster valt
+                                    if (photoTime >= lowerBound && photoTime <= upperBound)
+                                    {
+                                        // Voeg geldige foto toe aan de lijst
+                                        PicturesToDisplay.Add(new KioskPhoto() { Id = 0, Source = file });
+                                    }
+                                }
+                                catch
+                                {
+                                    // Als er een fout optreedt (bijv. ongeldige tijd), sla de foto over
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            // Update de fotos in de UI
+            // Update de foto's in de gebruikersinterface
             PictureManager.UpdatePictures(PicturesToDisplay);
         }
 
-        // Wordt uitgevoerd wanneer er op de Refresh knop is geklikt
+        // Deze methode wordt uitgevoerd als er op de "Refresh"-knop is geklikt
         public void RefreshButtonClick()
         {
             // Herlaad de foto's van vandaag
