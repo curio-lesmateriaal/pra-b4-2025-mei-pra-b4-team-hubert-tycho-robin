@@ -15,6 +15,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Microsoft.Win32;
+
 
 namespace PRA_B4_FOTOKIOSK
 {
@@ -51,14 +53,13 @@ namespace PRA_B4_FOTOKIOSK
             SearchController.Start();
         }
 
+
         private void btnShopAdd_Click(object sender, RoutedEventArgs e)
         {
-            bool invoerCorrect = true;
-
             // Valideer aantal
             if (!double.TryParse(tbAmount.Text, out double amount) || amount <= 0)
             {
-                
+                MessageBox.Show("Voer een geldig aantal in.");
                 return;
             }
 
@@ -66,7 +67,7 @@ namespace PRA_B4_FOTOKIOSK
             string geselecteerdProduct = cbProducts.SelectedItem as string;
             if (string.IsNullOrEmpty(geselecteerdProduct))
             {
-                
+                MessageBox.Show("Selecteer een product.");
                 return;
             }
 
@@ -81,17 +82,52 @@ namespace PRA_B4_FOTOKIOSK
                     prijsPerStuk = 4.00;
                     break;
                 default:
-                    
+                    MessageBox.Show("Ongeldig product geselecteerd.");
                     return;
             }
 
             // Bereken eindbedrag
             double eindbedrag = amount * prijsPerStuk;
 
-            // Toon eindbedrag in Label en TextBox
+            // Toon eindbedrag in Label
             lbReceipt.Content = $"Eindbedrag: {eindbedrag:C}";
-            
+
+            // Maak bontekst
+            string bonTekst = $"--- Bon ---\n" +
+                              $"Product: {geselecteerdProduct}\n" +
+                              $"Aantal: {amount}\n" +
+                              $"Prijs per stuk: {prijsPerStuk:C}\n" +
+                              $"Totaal: {eindbedrag:C}\n" +
+                              $"Datum: {DateTime.Now}\n";
+
+            string tijdstempel = DateTime.Now.ToString("yyyy-MM-dd_HH-mm");
+
+
+            // SaveFileDialog gebruiken
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                FileName = $"bon_{tijdstempel}.txt",
+                Filter = "Textbestand (*.txt)|*.txt",
+                Title = "Bon opslaan"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                string bestandsnaam = saveFileDialog.FileName;
+
+                // Voeg .txt toe als gebruiker dat niet gedaan heeft
+                if (!System.IO.Path.GetExtension(bestandsnaam).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+
+                {
+                    bestandsnaam += ".txt";
+                }
+
+                File.WriteAllText(bestandsnaam, bonTekst);
+                MessageBox.Show($"Bon opgeslagen als:\n{bestandsnaam}");
+            }
         }
+
+
 
 
 
