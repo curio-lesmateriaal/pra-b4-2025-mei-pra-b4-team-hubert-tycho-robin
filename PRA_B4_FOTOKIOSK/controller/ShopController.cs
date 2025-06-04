@@ -33,7 +33,7 @@ namespace PRA_B4_FOTOKIOSK.controller
 
         public void AddButtonClick()
         {
-            KioskProduct? selectedProduct = ShopManager.GetSelectedProduct();  // kan null zijn
+            KioskProduct? selectedProduct = ShopManager.GetSelectedProduct();
             int? fotoId = ShopManager.GetFotoId();
             int? amount = ShopManager.GetAmount();
 
@@ -72,15 +72,15 @@ namespace PRA_B4_FOTOKIOSK.controller
 
             foreach (var product in orderedProducts)
             {
-                if (product.productName == null)
+                if (product.ProductName == null)
                 {
-                    // Safeguard voor mogelijke null, mocht dat voorkomen
-                    product.productName = "(Onbekend product)";
+                    product.ProductName = "(Onbekend product)";
                 }
+
                 bon.AppendLine(
-                    $"FotoId: {product.photoId}\nProduct: {product.productName}\nAantal: {product.amount}\nTotaal Prijs: €{product.totalPrice:0.00}\n"
+                    $"FotoId: {product.PhotoId}\nProduct: {product.ProductName}\nAantal: {product.Amount}\nTotaal Prijs: €{product.TotalPrice:0.00}\n"
                 );
-                totaal += product.totalPrice;
+                totaal += product.TotalPrice;
             }
 
             bon.AppendLine("-------------------------");
@@ -91,7 +91,7 @@ namespace PRA_B4_FOTOKIOSK.controller
             try
             {
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string projectRoot = Directory.GetParent(baseDir)?.Parent?.Parent?.Parent?.FullName ?? baseDir; // null-check
+                string projectRoot = Directory.GetParent(baseDir)?.Parent?.Parent?.Parent?.FullName ?? baseDir;
                 string filePath = Path.Combine(projectRoot, "Bon.txt");
                 File.WriteAllText(filePath, bon.ToString());
             }
