@@ -9,8 +9,6 @@ namespace PRA_B4_FOTOKIOSK.controller
 {
     public class PictureController
     {
-        public static Home Window { get; set; }
-
         public List<KioskPhoto> PicturesToDisplay = new List<KioskPhoto>();
 
         public void Start()
@@ -18,20 +16,17 @@ namespace PRA_B4_FOTOKIOSK.controller
             int today = (int)DateTime.Now.DayOfWeek;
             PicturesToDisplay.Clear();
             DateTime now = DateTime.Now;
-
-            // Tijdsvenster: 30 tot 2 minuten geleden
             DateTime lowerBound = now.AddMinutes(-30);
             DateTime upperBound = now.AddMinutes(-2);
 
             List<(DateTime time, string path)> allPhotos = new List<(DateTime, string)>();
 
-            // Doorloop elke map in de fotos-directory
+            // Foto's ophalen
             foreach (string dir in Directory.GetDirectories(@"../../../fotos"))
             {
                 string folderName = new DirectoryInfo(dir).Name;
                 string[] parts = folderName.Split('_');
 
-                // Controleer of folder bij juiste dag hoort
                 if (parts.Length > 0 && int.TryParse(parts[0], out int folderDay) && folderDay == today)
                 {
                     foreach (string file in Directory.GetFiles(dir))
@@ -39,7 +34,6 @@ namespace PRA_B4_FOTOKIOSK.controller
                         string filename = Path.GetFileNameWithoutExtension(file);
                         string[] fileParts = filename.Split('_');
 
-                        // Probeer tijd uit bestandsnaam te halen
                         if (fileParts.Length >= 3 &&
                             int.TryParse(fileParts[0], out int hour) &&
                             int.TryParse(fileParts[1], out int minute) &&
@@ -54,19 +48,15 @@ namespace PRA_B4_FOTOKIOSK.controller
                                     allPhotos.Add((photoTime, file));
                                 }
                             }
-                            catch
-                            {
-                                // Ongeldige tijd, overslaan
-                            }
+                            catch { }
                         }
                     }
                 }
             }
 
-            // Sorteer alle foto's op tijd
             var sortedPhotos = allPhotos.OrderBy(p => p.time).ToList();
 
-            // Groepeer foto's die binnen 10 seconden van elkaar vallen
+            // Groeperen per cluster binnen 10 seconden
             List<List<(DateTime time, string path)>> groupedPhotos = new List<List<(DateTime, string)>>();
 
             foreach (var photo in sortedPhotos)
@@ -88,31 +78,59 @@ namespace PRA_B4_FOTOKIOSK.controller
                 }
             }
 
-            // Zoek paren van groepen die 60 seconden uit elkaar liggen
-            for (int i = 0; i < groupedPhotos.Count; i++)
+            // Split in cam1 en cam2 groepen (mod 120 sec: eerste 60 = cam1, tweede 60 = cam2)
+            List<List<(DateTime time, string path)>> cam1Groups = new();
+            List<List<(DateTime time, string path)>> cam2Groups = new();
+
+            foreach (var group in groupedPhotos)
             {
-                var group1 = groupedPhotos[i];
+                var firstTime = group.First().time;
+                int totalSeconds = firstTime.Minute * 60 + firstTime.Second;
+
+                if (totalSeconds % 120 < 60)
+                    cam1Groups.Add(group);
+                else
+                    cam2Groups.Add(group);
+            }
+
+            // Strikte 1-op-1 lineaire matching
+            int cam1Index = 0;
+            int cam2Index = 0;
+
+            while (cam1Index < cam1Groups.Count && cam2Index < cam2Groups.Count)
+            {
+                var group1 = cam1Groups[cam1Index];
+                var group2 = cam2Groups[cam2Index];
+
                 DateTime time1 = group1.First().time;
+                DateTime time2 = group2.First().time;
 
-                for (int j = i + 1; j < groupedPhotos.Count; j++)
+                double diff = (time2 - time1).TotalSeconds;
+
+                if (Math.Abs(diff - 60) <= 2)  // tolerantie ±2 seconden
                 {
-                    var group2 = groupedPhotos[j];
-                    DateTime time2 = group2.First().time;
-
-                    if (Math.Abs((time2 - time1).TotalSeconds - 60) <= 1)
+                    int count = Math.Min(group1.Count, group2.Count);
+                    for (int i = 0; i < count; i++)
                     {
-                        int count = Math.Min(group1.Count, group2.Count);
-                        for (int k = 0; k < count; k++)
-                        {
-                            PicturesToDisplay.Add(new KioskPhoto { Id = 0, Source = group1[k].path });
-                            PicturesToDisplay.Add(new KioskPhoto { Id = 0, Source = group2[k].path });
-                        }
-                        break; // Stop na eerste match met 60 seconden verschil
+                        PicturesToDisplay.Add(new KioskPhoto { Id = 0, Source = group1[i].path });
+                        PicturesToDisplay.Add(new KioskPhoto { Id = 0, Source = group2[i].path });
                     }
+
+                    Console.WriteLine($"✔️ Match: Cam1 {time1:HH:mm:ss} + Cam2 {time2:HH:mm:ss} ({count} foto's)");
+                    cam1Index++;
+                    cam2Index++;
+                }
+                else if (time2 < time1.AddSeconds(59))
+                {
+                    cam2Index++;  // Cam2 foto is te vroeg, schuif door
+                }
+                else
+                {
+                    cam1Index++;  // Cam1 foto is te oud, schuif door
                 }
             }
 
-            // Update de foto-weergave
+            Console.WriteLine($"Aantal gekoppelde foto's: {PicturesToDisplay.Count}");
             PictureManager.UpdatePictures(PicturesToDisplay);
         }
 
