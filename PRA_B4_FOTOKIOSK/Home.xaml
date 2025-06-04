@@ -12,12 +12,12 @@
             <TabItem Header="Foto's">
                 <Grid>
                     <ScrollViewer Margin="10,38,10,43">
-                        <WrapPanel x:Name="spPictures">
-                        </WrapPanel>
+                        <WrapPanel x:Name="spPictures"/>
                     </ScrollViewer>
                     <Button x:Name="btnRefresh" Content="Refresh" HorizontalAlignment="Left" Margin="10,725,0,0" VerticalAlignment="Top" Width="83" Height="28" Click="btnRefresh_Click"/>
                 </Grid>
             </TabItem>
+
             <TabItem Header="Kassa">
                 <Grid>
                     <Label Content="Foto-id:" HorizontalAlignment="Left" Margin="100,192,0,0" VerticalAlignment="Top" Height="24" Width="255"/>
@@ -28,22 +28,34 @@
                     <TextBox x:Name="tbAmount" HorizontalAlignment="Left" Margin="100,356,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="325" Height="22"/>
                     <Button x:Name="btnShopAdd" Content="Toevoegen" HorizontalAlignment="Left" Margin="100,383,0,0" VerticalAlignment="Top" Width="147" Click="btnShopAdd_Click"/>
                     <Button x:Name="btnShopReset" Content="Resetten" HorizontalAlignment="Left" Margin="278,383,0,0" VerticalAlignment="Top" Width="147" Click="btnShopReset_Click"/>
-                    
+
                     <Label x:Name="lbPrices" Content="" HorizontalAlignment="Left" Margin="1065,174,0,0" VerticalAlignment="Top" Height="536" Width="695"/>
-                    
                     <Label x:Name="lbReceipt" Content="" HorizontalAlignment="Left" Margin="100,442,0,0" VerticalAlignment="Top" Height="392" Width="325"/>
                     <Button x:Name="btnSave" Content="Bon Opslaan" HorizontalAlignment="Left" Margin="10,998,0,0" VerticalAlignment="Top" Width="83" Height="28" Click="btnSave_Click"/>
                 </Grid>
             </TabItem>
+
             <TabItem Header="Zoeken">
                 <Grid>
-                    <Label Content="Zoeken:" HorizontalAlignment="Left" Margin="100,53,0,0" VerticalAlignment="Top" Height="24" Width="255"/>
-                    <TextBox x:Name="tbZoeken" HorizontalAlignment="Left" Margin="100,77,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="325" Height="22"/>
-                    <Button x:Name="btnZoeken" Content="Zoeken" HorizontalAlignment="Left" Margin="430,77,0,0" VerticalAlignment="Top" Width="83" Height="22" Click="btnZoeken_Click"/>
-                    <Image x:Name="imgBig" HorizontalAlignment="Left" Height="565" Margin="100,128,0,0" VerticalAlignment="Top" Width="1047"/>
-                    <Label x:Name="lbSearchInfo" Content="" HorizontalAlignment="Left" Margin="100,727,0,0" VerticalAlignment="Top" Height="251" Width="1091"/>
+                    <Label Content="Dag van de week:" HorizontalAlignment="Left" Margin="100,15,0,0" VerticalAlignment="Top" Height="24" Width="255"/>
+                    <ComboBox x:Name="cbDagenVanDeWeek" Width="200" Height="24" Margin="100,40,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <ComboBoxItem Content="maandag" />
+                        <ComboBoxItem Content="dinsdag" />
+                        <ComboBoxItem Content="woensdag" />
+                        <ComboBoxItem Content="donderdag" />
+                        <ComboBoxItem Content="vrijdag" />
+                        <ComboBoxItem Content="zaterdag" />
+                        <ComboBoxItem Content="zondag" />
+                    </ComboBox>
+
+                    <Label Content="Tijd (uur:min:sec):" HorizontalAlignment="Left" Margin="100,73,0,0" VerticalAlignment="Top" Height="24" Width="255"/>
+                    <TextBox x:Name="tbZoeken" HorizontalAlignment="Left" Margin="100,97,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="325" Height="22"/>
+                    <Button x:Name="btnZoeken" Content="Zoek foto" HorizontalAlignment="Left" Margin="430,97,0,0" VerticalAlignment="Top" Width="83" Height="22" Click="btnZoeken_Click"/>
+                    <Image x:Name="imgBig" HorizontalAlignment="Left" Height="565" Margin="100,148,0,0" VerticalAlignment="Top" Width="1047"/>
+                    <Label x:Name="lbSearchInfo" Content="" HorizontalAlignment="Left" Margin="100,747,0,0" VerticalAlignment="Top" Height="251" Width="1091"/>
                 </Grid>
             </TabItem>
+
         </TabControl>
     </Grid>
 </Window>
