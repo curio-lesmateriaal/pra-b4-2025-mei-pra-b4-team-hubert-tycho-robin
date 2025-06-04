@@ -9,88 +9,115 @@ namespace PRA_B4_FOTOKIOSK.controller
 {
     public class PictureController
     {
-        // De window die we laten zien op het scherm
         public static Home Window { get; set; }
 
-        // De lijst met foto's die we op het scherm willen tonen
         public List<KioskPhoto> PicturesToDisplay = new List<KioskPhoto>();
 
-        // Deze methode wordt uitgevoerd wanneer de foto-pagina opent
         public void Start()
         {
-            // Bepaal welk dagnummer het vandaag is (0 = Zondag, 1 = Maandag, ..., 6 = Zaterdag)
             int today = (int)DateTime.Now.DayOfWeek;
-
-            // Maak de lijst leeg zodat we opnieuw kunnen vullen
             PicturesToDisplay.Clear();
-
-            // Haal het huidige tijdstip op
             DateTime now = DateTime.Now;
 
-            // Bereken de onder- en bovengrens voor geldige foto's
-            // Alleen foto's tussen 2 en 30 minuten geleden mogen worden getoond
-            DateTime lowerBound = now.AddMinutes(-30); // 30 minuten geleden
-            DateTime upperBound = now.AddMinutes(-2);  // 2 minuten geleden
+            // Tijdsvenster: 30 tot 2 minuten geleden
+            DateTime lowerBound = now.AddMinutes(-30);
+            DateTime upperBound = now.AddMinutes(-2);
 
-            // Loop door alle dagmappen in de fotos-map
+            List<(DateTime time, string path)> allPhotos = new List<(DateTime, string)>();
+
+            // Doorloop elke map in de fotos-directory
             foreach (string dir in Directory.GetDirectories(@"../../../fotos"))
             {
-                // Bijvoorbeeld: mapnaam "0_Zondag"
                 string folderName = new DirectoryInfo(dir).Name;
-
-                // Splits de mapnaam op "_" om het dagnummer eruit te halen
                 string[] parts = folderName.Split('_');
 
-                // Controleer of het eerste deel van de mapnaam een geldig getal is
-                if (parts.Length > 0 && int.TryParse(parts[0], out int folderDay))
+                // Controleer of folder bij juiste dag hoort
+                if (parts.Length > 0 && int.TryParse(parts[0], out int folderDay) && folderDay == today)
                 {
-                    // Alleen doorgaan als het dagnummer van de map overeenkomt met vandaag
-                    if (folderDay == today)
+                    foreach (string file in Directory.GetFiles(dir))
                     {
-                        // Loop door alle bestanden in deze dagmap
-                        foreach (string file in Directory.GetFiles(dir))
+                        string filename = Path.GetFileNameWithoutExtension(file);
+                        string[] fileParts = filename.Split('_');
+
+                        // Probeer tijd uit bestandsnaam te halen
+                        if (fileParts.Length >= 3 &&
+                            int.TryParse(fileParts[0], out int hour) &&
+                            int.TryParse(fileParts[1], out int minute) &&
+                            int.TryParse(fileParts[2], out int second))
                         {
-                            // Haal de bestandsnaam zonder extensie op
-                            // Bijvoorbeeld: "10_06_32_id2125"
-                            string filename = Path.GetFileNameWithoutExtension(file);
-                            string[] fileParts = filename.Split('_');
-
-                            // Verwacht dat de bestandsnaam begint met uur_minuut_seconde_...
-                            if (fileParts.Length >= 3 &&
-                                int.TryParse(fileParts[0], out int hour) &&
-                                int.TryParse(fileParts[1], out int minute) &&
-                                int.TryParse(fileParts[2], out int second))
+                            try
                             {
-                                try
-                                {
-                                    // Maak een DateTime object van de tijd in de bestandsnaam
-                                    DateTime photoTime = new DateTime(now.Year, now.Month, now.Day, hour, minute, second);
+                                DateTime photoTime = new DateTime(now.Year, now.Month, now.Day, hour, minute, second);
 
-                                    // Controleer of de foto binnen het tijdsvenster valt
-                                    if (photoTime >= lowerBound && photoTime <= upperBound)
-                                    {
-                                        // Voeg geldige foto toe aan de lijst
-                                        PicturesToDisplay.Add(new KioskPhoto() { Id = 0, Source = file });
-                                    }
-                                }
-                                catch
+                                if (photoTime >= lowerBound && photoTime <= upperBound)
                                 {
-                                    // Als er een fout optreedt (bijv. ongeldige tijd), sla de foto over
+                                    allPhotos.Add((photoTime, file));
                                 }
+                            }
+                            catch
+                            {
+                                // Ongeldige tijd, overslaan
                             }
                         }
                     }
                 }
             }
 
-            // Update de foto's in de gebruikersinterface
+            // Sorteer alle foto's op tijd
+            var sortedPhotos = allPhotos.OrderBy(p => p.time).ToList();
+
+            // Groepeer foto's die binnen 10 seconden van elkaar vallen
+            List<List<(DateTime time, string path)>> groupedPhotos = new List<List<(DateTime, string)>>();
+
+            foreach (var photo in sortedPhotos)
+            {
+                bool added = false;
+                foreach (var group in groupedPhotos)
+                {
+                    if (Math.Abs((photo.time - group.Last().time).TotalSeconds) <= 10)
+                    {
+                        group.Add(photo);
+                        added = true;
+                        break;
+                    }
+                }
+
+                if (!added)
+                {
+                    groupedPhotos.Add(new List<(DateTime, string)> { photo });
+                }
+            }
+
+            // Zoek paren van groepen die 60 seconden uit elkaar liggen
+            for (int i = 0; i < groupedPhotos.Count; i++)
+            {
+                var group1 = groupedPhotos[i];
+                DateTime time1 = group1.First().time;
+
+                for (int j = i + 1; j < groupedPhotos.Count; j++)
+                {
+                    var group2 = groupedPhotos[j];
+                    DateTime time2 = group2.First().time;
+
+                    if (Math.Abs((time2 - time1).TotalSeconds - 60) <= 1)
+                    {
+                        int count = Math.Min(group1.Count, group2.Count);
+                        for (int k = 0; k < count; k++)
+                        {
+                            PicturesToDisplay.Add(new KioskPhoto { Id = 0, Source = group1[k].path });
+                            PicturesToDisplay.Add(new KioskPhoto { Id = 0, Source = group2[k].path });
+                        }
+                        break; // Stop na eerste match met 60 seconden verschil
+                    }
+                }
+            }
+
+            // Update de foto-weergave
             PictureManager.UpdatePictures(PicturesToDisplay);
         }
 
-        // Deze methode wordt uitgevoerd als er op de "Refresh"-knop is geklikt
         public void RefreshButtonClick()
         {
-            // Herlaad de foto's van vandaag
             Start();
         }
     }
