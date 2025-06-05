@@ -1,0 +1,14 @@
+Bon:
+-------------------------
+FotoId: 6502
+Product: Sleutelhanger
+Aantal: 2
+Totaal Prijs: €14,00
+
+FotoId: 6502
+Product: Sleutelhanger
+Aantal: 2
+Totaal Prijs: €14,00
+
+-------------------------
+Eindbedrag: €28,00
